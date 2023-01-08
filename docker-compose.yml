@@ -20,5 +20,3 @@ services:
       REDIS_HOST: db
       REDIS_PORT: 6379
       REDIS_PASSWORD: password
-    # depends_on:
-    #   - db
