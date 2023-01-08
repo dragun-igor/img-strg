@@ -8,6 +8,7 @@ import (
 	"io"
 	"os"
 	"testing"
+	"time"
 
 	strg "github.com/dragun-igor/img-strg/proto/api"
 	"github.com/stretchr/testify/require"
@@ -30,10 +31,26 @@ func TestClientFlow(t *testing.T) {
 	defer fileImage1.Close()
 	bimage1, err := io.ReadAll(fileImage1)
 	require.NoError(t, err)
+
 	_, err = service.SendImage(ctx, &strg.SendImageRequest{
 		Name:  "photo.jpg",
 		Image: bimage1,
 	})
+
+	// wg := &sync.WaitGroup{}
+	// for i := 0; i < 300; i++ {
+	// 	wg.Add(1)
+	// 	go func() {
+	// 		defer wg.Done()
+	// 		_, err := service.SendImage(ctx, &strg.SendImageRequest{
+	// 			Name:  "photo.jpg",
+	// 			Image: bimage1,
+	// 		})
+	// 		require.NoError(t, err)
+	// 	}()
+	// }
+	// wg.Wait()
+
 	require.NoError(t, err)
 	list1, err := service.GetImagesList(ctx, &emptypb.Empty{})
 	require.NoError(t, err)
@@ -45,6 +62,7 @@ func TestClientFlow(t *testing.T) {
 	defer fileImage2.Close()
 	bimage2, err := io.ReadAll(fileImage2)
 	require.NoError(t, err)
+	time.Sleep(time.Second * 2)
 	_, err = service.SendImage(ctx, &strg.SendImageRequest{
 		Name:  "photo.jpg",
 		Image: bimage2,

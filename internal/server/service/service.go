@@ -2,11 +2,10 @@ package service
 
 import (
 	"context"
-	"fmt"
 	"io"
 	"log"
 	"os"
-	"sync/atomic"
+	"sync"
 	"syscall"
 	"time"
 
@@ -23,10 +22,13 @@ const (
 // Image storage service
 type Service struct {
 	strg.ImageStorageServer
+	mu               *sync.Mutex
 	db               Storage
 	storagePath      string
 	limitLoadCounter int64
+	limitLoadCond    *sync.Cond
 	limitListCounter int64
+	limitListCond    *sync.Cond
 }
 
 // Checking dir exists
@@ -46,16 +48,17 @@ func New(db Storage, storagePath string) (*Service, error) {
 		}
 	}
 	return &Service{
-		db:          db,
-		storagePath: storagePath,
+		db:            db,
+		storagePath:   storagePath,
+		mu:            &sync.Mutex{},
+		limitLoadCond: sync.NewCond(&sync.Mutex{}),
+		limitListCond: sync.NewCond(&sync.Mutex{}),
 	}, nil
 }
 
 // Checking file exists
 func fileExists(path string) bool {
 	info, err := os.Stat(path)
-	fmt.Println(info)
-	fmt.Println(err)
 	if os.IsNotExist(err) {
 		return false
 	}
@@ -64,9 +67,18 @@ func fileExists(path string) bool {
 
 // Sending image to storage
 func (s *Service) SendImage(ctx context.Context, r *strg.SendImageRequest) (*emptypb.Empty, error) {
-	atomic.AddInt64(&s.limitLoadCounter, 1)
+	s.limitLoadCond.L.Lock()
+	for s.limitLoadCounter >= limitLoad {
+		s.limitLoadCond.Wait()
+	}
+	s.limitLoadCounter++
+	s.limitLoadCond.L.Unlock()
+
 	defer func() {
-		atomic.AddInt64(&s.limitLoadCounter, -1)
+		s.limitLoadCond.L.Lock()
+		s.limitLoadCounter--
+		s.limitLoadCond.L.Unlock()
+		s.limitLoadCond.Signal()
 	}()
 
 	var file *os.File
@@ -88,7 +100,9 @@ func (s *Service) SendImage(ctx context.Context, r *strg.SendImageRequest) (*emp
 	}
 
 	defer file.Close()
+	s.mu.Lock()
 	_, err = file.Write(r.GetImage())
+	s.mu.Unlock()
 	if err != nil {
 		return nil, convert(err)
 	}
@@ -97,15 +111,26 @@ func (s *Service) SendImage(ctx context.Context, r *strg.SendImageRequest) (*emp
 
 // Getting image by filename
 func (s *Service) GetImage(ctx context.Context, r *strg.GetImageRequest) (*strg.GetImageResponse, error) {
-	atomic.AddInt64(&s.limitLoadCounter, 1)
+	s.limitLoadCond.L.Lock()
+	for s.limitLoadCounter >= limitLoad {
+		s.limitLoadCond.Wait()
+	}
+	s.limitLoadCounter++
+	s.limitLoadCond.L.Unlock()
+
 	defer func() {
-		atomic.AddInt64(&s.limitLoadCounter, -1)
+		s.limitLoadCond.L.Lock()
+		s.limitLoadCounter--
+		s.limitLoadCond.L.Unlock()
+		s.limitLoadCond.Signal()
 	}()
 	file, err := os.Open(s.storagePath + r.GetName())
 	if err != nil {
 		return nil, convert(err)
 	}
+	s.mu.Lock()
 	b, err := io.ReadAll(file)
+	s.mu.Unlock()
 	if err != nil {
 		return nil, convert(err)
 	}
@@ -114,11 +139,22 @@ func (s *Service) GetImage(ctx context.Context, r *strg.GetImageRequest) (*strg.
 
 // Getting images data in storage folder (filename, creation time, modification time)
 func (s *Service) GetImagesList(ctx context.Context, r *emptypb.Empty) (*strg.GetImagesListResponse, error) {
-	atomic.AddInt64(&s.limitListCounter, 1)
+	s.limitListCond.L.Lock()
+	for s.limitListCounter >= limitList {
+		s.limitListCond.Wait()
+	}
+	s.limitListCounter++
+	s.limitListCond.L.Unlock()
+
 	defer func() {
-		atomic.AddInt64(&s.limitListCounter, -1)
+		s.limitListCond.L.Lock()
+		s.limitListCounter--
+		s.limitListCond.L.Unlock()
+		s.limitListCond.Signal()
 	}()
+	s.mu.Lock()
 	files, err := os.ReadDir(s.storagePath)
+	s.mu.Unlock()
 	if err != nil {
 		return nil, convert(err)
 	}
