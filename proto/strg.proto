@@ -1,0 +1,35 @@
+syntax = "proto3";
+package strg;
+option go_package = ".;strg";
+
+import "google/protobuf/timestamp.proto";
+import "google/protobuf/empty.proto";
+
+service ImageStorage {
+    rpc SendImage(SendImageRequest) returns (google.protobuf.Empty) {}
+    rpc GetImage(GetImageRequest) returns (GetImageResponse) {}
+    rpc GetImagesList(google.protobuf.Empty) returns (GetImagesListResponse) {}
+}
+
+message SendImageRequest {
+    string name = 1;
+    bytes image = 2;
+}
+
+message GetImageRequest {
+    string name = 1;
+}
+
+message GetImageResponse {
+    bytes image = 1;
+}
+
+message GetImagesListResponse {
+    repeated Images images = 1;
+}
+
+message Images {
+    string name = 1;
+    google.protobuf.Timestamp creationTime = 2;
+    google.protobuf.Timestamp modificationTime = 3;
+}

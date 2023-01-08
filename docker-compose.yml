@@ -1,0 +1,24 @@
+version: "3.7"
+
+services:
+  db:
+    image: redis
+    restart: always
+    command: redis-server --save 20 1 --loglevel warning --requirepass password
+  server:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    restart: always
+    ports:
+      - 127.0.0.1:50051:50051
+    links:
+      - db:db
+    environment:
+      GRPC_ADDR: 0.0.0.0:50051
+      STORAGE_PATH: ./image_storage/
+      REDIS_HOST: db
+      REDIS_PORT: 6379
+      REDIS_PASSWORD: password
+    # depends_on:
+    #   - db
