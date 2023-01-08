@@ -68,9 +68,10 @@ func (s *Service) SendImage(ctx context.Context, r *strg.SendImageRequest) (*emp
 	defer func() {
 		atomic.AddInt64(&s.limitLoadCounter, -1)
 	}()
+
 	var file *os.File
 	var err error
-	fmt.Println(fileExists(s.storagePath + r.GetName()))
+
 	if !fileExists(s.storagePath + r.GetName()) {
 		file, err = os.Create(s.storagePath + r.GetName())
 		if err != nil {
@@ -85,6 +86,7 @@ func (s *Service) SendImage(ctx context.Context, r *strg.SendImageRequest) (*emp
 			return nil, convert(err)
 		}
 	}
+
 	defer file.Close()
 	_, err = file.Write(r.GetImage())
 	if err != nil {
