@@ -15,10 +15,12 @@ func New(redis Redis) *Storage {
 	}
 }
 
+// Сохраняет время создания файла в редис (в линуксе не хранится время созданяи файла)
 func (s *Storage) SetBirthTimeFile(key string, value time.Time) error {
 	return s.redis.Set(key, value.Unix())
 }
 
+// Получение времени создания файла
 func (s *Storage) GetBirthTimeFile(key string) (time.Time, error) {
 	data, err := s.redis.Get(key)
 	if err != nil {

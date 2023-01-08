@@ -8,6 +8,7 @@ import (
 	"github.com/dragun-igor/img-strg/pkg/redis"
 )
 
+// Инициализация редиса
 func InitRedis(config *config.Config) (*redis.Client, error) {
 	client, err := redis.NewClient(redis.Config{
 		Host:              config.RedisHost,

@@ -1,3 +1,4 @@
+// Конвертер обычных ошибок в grpc формат
 package service
 
 import (

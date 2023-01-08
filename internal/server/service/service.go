@@ -19,7 +19,6 @@ const (
 	limitList int64 = 100
 )
 
-// Image storage service
 type Service struct {
 	strg.ImageStorageServer
 	mu               *sync.Mutex
@@ -31,7 +30,7 @@ type Service struct {
 	limitListCond    *sync.Cond
 }
 
-// Checking dir exists
+// Проверка существования папки
 func dirExists(path string) bool {
 	info, err := os.Stat(path)
 	if os.IsNotExist(err) {
@@ -40,7 +39,7 @@ func dirExists(path string) bool {
 	return info.IsDir()
 }
 
-// Getting new image storage service
+// Конструктор сервиса
 func New(db Storage, storagePath string) (*Service, error) {
 	if !dirExists(storagePath) {
 		if err := os.Mkdir(storagePath, 0755); err != nil {
@@ -56,7 +55,7 @@ func New(db Storage, storagePath string) (*Service, error) {
 	}, nil
 }
 
-// Checking file exists
+// Проверка существования файла
 func fileExists(path string) bool {
 	info, err := os.Stat(path)
 	if os.IsNotExist(err) {
@@ -65,7 +64,7 @@ func fileExists(path string) bool {
 	return !info.IsDir()
 }
 
-// Sending image to storage
+// Отправка изображения в бинарном виде
 func (s *Service) SendImage(ctx context.Context, r *strg.SendImageRequest) (*emptypb.Empty, error) {
 	s.limitLoadCond.L.Lock()
 	for s.limitLoadCounter >= limitLoad {
@@ -109,7 +108,7 @@ func (s *Service) SendImage(ctx context.Context, r *strg.SendImageRequest) (*emp
 	return &emptypb.Empty{}, nil
 }
 
-// Getting image by filename
+// Получение изображения в бинарном виде по имени файла
 func (s *Service) GetImage(ctx context.Context, r *strg.GetImageRequest) (*strg.GetImageResponse, error) {
 	s.limitLoadCond.L.Lock()
 	for s.limitLoadCounter >= limitLoad {
@@ -137,7 +136,7 @@ func (s *Service) GetImage(ctx context.Context, r *strg.GetImageRequest) (*strg.
 	return &strg.GetImageResponse{Image: b}, nil
 }
 
-// Getting images data in storage folder (filename, creation time, modification time)
+// Получение информации о файлах (название, вреям создания и время последней модификации)
 func (s *Service) GetImagesList(ctx context.Context, r *emptypb.Empty) (*strg.GetImagesListResponse, error) {
 	s.limitListCond.L.Lock()
 	for s.limitListCounter >= limitList {
