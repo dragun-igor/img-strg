@@ -44,7 +44,7 @@ func (s *ConverterSuite) TestConvert() {
 		},
 		{
 			err:  errs.ErrFileNotFound,
-			code: codes.AlreadyExists,
+			code: codes.InvalidArgument,
 		},
 		{
 			err:  errors.New("test"),
