@@ -66,13 +66,13 @@ func fileExists(path string) bool {
 
 // Отправка изображения в бинарном виде
 func (s *Service) SendImage(ctx context.Context, r *strg.SendImageRequest) (*emptypb.Empty, error) {
+	// sync Cond для ограничения количества конкурентных запросов
 	s.limitLoadCond.L.Lock()
 	for s.limitLoadCounter >= limitLoad {
 		s.limitLoadCond.Wait()
 	}
 	s.limitLoadCounter++
 	s.limitLoadCond.L.Unlock()
-
 	defer func() {
 		s.limitLoadCond.L.Lock()
 		s.limitLoadCounter--
@@ -82,7 +82,6 @@ func (s *Service) SendImage(ctx context.Context, r *strg.SendImageRequest) (*emp
 
 	var file *os.File
 	var err error
-
 	if !fileExists(s.storagePath + r.GetName()) {
 		file, err = os.Create(s.storagePath + r.GetName())
 		if err != nil {
@@ -110,19 +109,20 @@ func (s *Service) SendImage(ctx context.Context, r *strg.SendImageRequest) (*emp
 
 // Получение изображения в бинарном виде по имени файла
 func (s *Service) GetImage(ctx context.Context, r *strg.GetImageRequest) (*strg.GetImageResponse, error) {
+	// sync Cond для ограничения количества конкурентных запросов
 	s.limitLoadCond.L.Lock()
 	for s.limitLoadCounter >= limitLoad {
 		s.limitLoadCond.Wait()
 	}
 	s.limitLoadCounter++
 	s.limitLoadCond.L.Unlock()
-
 	defer func() {
 		s.limitLoadCond.L.Lock()
 		s.limitLoadCounter--
 		s.limitLoadCond.L.Unlock()
 		s.limitLoadCond.Signal()
 	}()
+
 	file, err := os.Open(s.storagePath + r.GetName())
 	if err != nil {
 		return nil, convert(err)
@@ -138,19 +138,20 @@ func (s *Service) GetImage(ctx context.Context, r *strg.GetImageRequest) (*strg.
 
 // Получение информации о файлах (название, вреям создания и время последней модификации)
 func (s *Service) GetImagesList(ctx context.Context, r *emptypb.Empty) (*strg.GetImagesListResponse, error) {
+	// sync Cond для ограничения количества конкурентных запросов
 	s.limitListCond.L.Lock()
 	for s.limitListCounter >= limitList {
 		s.limitListCond.Wait()
 	}
 	s.limitListCounter++
 	s.limitListCond.L.Unlock()
-
 	defer func() {
 		s.limitListCond.L.Lock()
 		s.limitListCounter--
 		s.limitListCond.L.Unlock()
 		s.limitListCond.Signal()
 	}()
+
 	s.mu.Lock()
 	files, err := os.ReadDir(s.storagePath)
 	s.mu.Unlock()
