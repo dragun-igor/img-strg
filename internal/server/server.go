@@ -22,13 +22,13 @@ type Server struct {
 
 // Getting new server
 func New(cfg *config.Config) (*Server, error) {
-	redis, err := resources.InitRedis(cfg)
+	db, err := resources.InitRedis(cfg)
 	if err != nil {
 		return nil, err
 	}
-	db := storage.New(redis)
+	storage := storage.New(db)
 	grpc := grpc.NewServer([]grpc.ServerOption{}...)
-	service, err := service.New(db, cfg.StoragePath)
+	service, err := service.New(storage, cfg.StoragePath)
 	if err != nil {
 		return nil, err
 	}
@@ -36,7 +36,7 @@ func New(cfg *config.Config) (*Server, error) {
 	return &Server{
 		grpc:   grpc,
 		config: cfg,
-		db:     redis,
+		db:     db,
 	}, nil
 }
 
