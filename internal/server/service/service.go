@@ -85,14 +85,17 @@ func (s *Service) SendImage(ctx context.Context, r *strg.SendImageRequest) (*emp
 	if !fileExists(s.storagePath + r.GetName()) {
 		file, err = os.Create(s.storagePath + r.GetName())
 		if err != nil {
+			log.Println(err)
 			return nil, convert(err)
 		}
 		if err := s.db.SetBirthTimeFile(r.GetName(), time.Now()); err != nil {
+			log.Println(err)
 			return nil, convert(err)
 		}
 	} else {
 		file, err = os.OpenFile(s.storagePath+r.GetName(), os.O_RDWR|os.O_CREATE, 0755)
 		if err != nil {
+			log.Println(err)
 			return nil, convert(err)
 		}
 	}
@@ -102,6 +105,7 @@ func (s *Service) SendImage(ctx context.Context, r *strg.SendImageRequest) (*emp
 	_, err = file.Write(r.GetImage())
 	s.mu.Unlock()
 	if err != nil {
+		log.Println(err)
 		return nil, convert(err)
 	}
 	return &emptypb.Empty{}, nil
@@ -125,12 +129,14 @@ func (s *Service) GetImage(ctx context.Context, r *strg.GetImageRequest) (*strg.
 
 	file, err := os.Open(s.storagePath + r.GetName())
 	if err != nil {
+		log.Println(err)
 		return nil, convert(err)
 	}
 	s.mu.Lock()
 	b, err := io.ReadAll(file)
 	s.mu.Unlock()
 	if err != nil {
+		log.Println(err)
 		return nil, convert(err)
 	}
 	return &strg.GetImageResponse{Image: b}, nil
@@ -156,6 +162,7 @@ func (s *Service) GetImagesList(ctx context.Context, r *emptypb.Empty) (*strg.Ge
 	files, err := os.ReadDir(s.storagePath)
 	s.mu.Unlock()
 	if err != nil {
+		log.Println(err)
 		return nil, convert(err)
 	}
 	images := make([]*strg.Images, 0, len(files))
