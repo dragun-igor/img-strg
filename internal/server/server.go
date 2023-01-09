@@ -20,7 +20,7 @@ type Server struct {
 	db     db
 }
 
-// Getting new server
+// Конструктор сервера
 func New(cfg *config.Config) (*Server, error) {
 	db, err := resources.InitRedis(cfg)
 	if err != nil {
