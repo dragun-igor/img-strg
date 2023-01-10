@@ -8,8 +8,7 @@ test:
 
 .PHONY: generate-mocks
 generate-mocks:
-	rm -rf internal/server/service/mocks && go generate internal/server/service/interface.go
-	rm -rf internal/pkg/storage/mocks && go generate internal/pkg/storage/interface.go
+	go generate ./...
 
 .PHONY: deploy
 deploy:
