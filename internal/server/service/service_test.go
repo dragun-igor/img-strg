@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"errors"
 	"os"
 	"testing"
 
@@ -45,8 +46,16 @@ func (s *ServiceSuite) TestSendImage() {
 		Name:  fileName,
 		Image: []byte{},
 	}
-	s.repo.EXPECT().SetBirthTimeFile(fileName, gomock.Any()).Return(nil)
+	testErr := errors.New("test")
+	s.repo.EXPECT().SetBirthTimeFile(fileName, gomock.Any()).Return(testErr)
 	_, err := s.service.SendImage(ctx, r)
+	require.Error(s.T(), err)
+	os.Remove(s.path + fileName)
+	s.repo.EXPECT().SetBirthTimeFile(fileName, gomock.Any()).Return(nil)
+	_, err = s.service.SendImage(ctx, r)
+	require.NoError(s.T(), err)
+	_, err = s.service.SendImage(ctx, r)
 	require.NoError(s.T(), err)
 	os.Remove(s.path + fileName)
+
 }
