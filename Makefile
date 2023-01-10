@@ -4,7 +4,7 @@ generate-proto:
 
 .PHONY: test
 test:
-	cd test && go test -v
+	go test -v internal/...
 
 .PHONY: generate-mocks
 generate-mocks:
