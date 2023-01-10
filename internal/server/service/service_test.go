@@ -47,15 +47,23 @@ func (s *ServiceSuite) TestSendImage() {
 		Image: []byte{},
 	}
 	testErr := errors.New("test")
+
 	s.repo.EXPECT().SetBirthTimeFile(fileName, gomock.Any()).Return(testErr)
 	_, err := s.service.SendImage(ctx, r)
-	require.Error(s.T(), err)
-	os.Remove(s.path + fileName)
+	require.EqualError(s.T(), err, testErr.Error())
+	err = os.Remove(s.path + fileName)
+	require.NoError(s.T(), err)
+
 	s.repo.EXPECT().SetBirthTimeFile(fileName, gomock.Any()).Return(nil)
 	_, err = s.service.SendImage(ctx, r)
 	require.NoError(s.T(), err)
+
 	_, err = s.service.SendImage(ctx, r)
 	require.NoError(s.T(), err)
-	os.Remove(s.path + fileName)
-
+	err = os.Remove(s.path + fileName)
+	require.NoError(s.T(), err)
 }
+
+func (s *ServiceSuite) TestGetImage() {}
+
+func (s *ServiceSuite) TestGetImagesList() {}
