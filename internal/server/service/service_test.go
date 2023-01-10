@@ -9,7 +9,6 @@ import (
 	"github.com/dragun-igor/img-strg/internal/server/service/mocks"
 	strg "github.com/dragun-igor/img-strg/proto/api"
 	"github.com/golang/mock/gomock"
-	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -27,7 +26,7 @@ func (s *ServiceSuite) SetupTest() {
 	s.repo = mocks.NewMockStorage(s.ctrl)
 	s.path = "./"
 	service, err := New(s.repo, s.path)
-	require.NoError(s.T(), err)
+	s.Require().NoError(err)
 	s.service = service
 }
 
@@ -50,20 +49,24 @@ func (s *ServiceSuite) TestSendImage() {
 
 	s.repo.EXPECT().SetBirthTimeFile(fileName, gomock.Any()).Return(testErr)
 	_, err := s.service.SendImage(ctx, r)
-	require.EqualError(s.T(), err, testErr.Error())
+	s.Require().EqualError(err, testErr.Error())
 	err = os.Remove(s.path + fileName)
-	require.NoError(s.T(), err)
+	s.Require().NoError(err)
 
 	s.repo.EXPECT().SetBirthTimeFile(fileName, gomock.Any()).Return(nil)
 	_, err = s.service.SendImage(ctx, r)
-	require.NoError(s.T(), err)
+	s.Require().NoError(err)
 
 	_, err = s.service.SendImage(ctx, r)
-	require.NoError(s.T(), err)
+	s.Require().NoError(err)
 	err = os.Remove(s.path + fileName)
-	require.NoError(s.T(), err)
+	s.Require().NoError(err)
 }
 
-func (s *ServiceSuite) TestGetImage() {}
+func (s *ServiceSuite) TestGetImage() {
+	// todo
+}
 
-func (s *ServiceSuite) TestGetImagesList() {}
+func (s *ServiceSuite) TestGetImagesList() {
+	// todo
+}
