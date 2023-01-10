@@ -8,4 +8,6 @@ Install protobuf: `sudo apt install -y protobuf-compiler`
 
 Generate protobuf: `make generate-proto`
 
+Generate mocks: `make generate-mocks`
+
 Run app with environment: `make deploy`
