@@ -121,7 +121,7 @@ func (s *ServiceSuite) TestGetImagesList() {
 	s.repo.EXPECT().GetBirthTimeFile(fileName)
 	res, err = s.service.GetImagesList(ctx, &emptypb.Empty{})
 	s.Require().NoError(err)
- s.Require().Equal(1, len(res.Images))
+	s.Require().Equal(1, len(res.Images))
 	s.Require().Equal(fileName, res.Images[0].Name)
 
 	err = os.RemoveAll(s.service.storagePath)
