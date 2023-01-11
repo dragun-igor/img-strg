@@ -4,7 +4,7 @@ generate-proto:
 
 .PHONY: test
 test:
-	go test -v --cover internal/...
+	go test -v --cover ./internal/...
 
 .PHONY: generate-mocks
 generate-mocks:
