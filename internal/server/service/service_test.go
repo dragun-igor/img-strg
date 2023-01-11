@@ -10,6 +10,7 @@ import (
 	strg "github.com/dragun-igor/img-strg/proto/api"
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/suite"
+	"google.golang.org/protobuf/types/known/emptypb"
 )
 
 type ServiceSuite struct {
@@ -40,7 +41,7 @@ func TestServiceSuite(t *testing.T) {
 
 func (s *ServiceSuite) TestSendImage() {
 	ctx := context.Background()
-	fileName := "test.name"
+	fileName := "image.name"
 	r := &strg.SendImageRequest{
 		Name:  fileName,
 		Image: []byte{},
@@ -64,9 +65,64 @@ func (s *ServiceSuite) TestSendImage() {
 }
 
 func (s *ServiceSuite) TestGetImage() {
-	// todo
+	ctx := context.Background()
+	fileName := "image.name"
+	r := &strg.SendImageRequest{
+		Name:  fileName,
+		Image: []byte{1, 2, 3, 4, 5, 6},
+	}
+
+	s.repo.EXPECT().SetBirthTimeFile(fileName, gomock.Any()).Return(nil)
+	_, err := s.service.SendImage(ctx, r)
+	s.Require().NoError(err)
+
+	res, err := s.service.GetImage(ctx, &strg.GetImageRequest{Name: "invalid name"})
+	s.Require().Error(err)
+	s.Require().Nil(res)
+
+	res, err = s.service.GetImage(ctx, &strg.GetImageRequest{Name: fileName})
+	s.Require().NoError(err)
+	s.Require().Equal([]byte{1, 2, 3, 4, 5, 6}, res.Image)
+
+	err = os.Remove(s.path + fileName)
+	s.Require().NoError(err)
 }
 
 func (s *ServiceSuite) TestGetImagesList() {
-	// todo
+	ctx := context.Background()
+	fileName := "image.name"
+	r := &strg.SendImageRequest{
+		Name:  fileName,
+		Image: []byte{1, 2, 3, 4, 5, 6},
+	}
+	testPath := "./test/"
+
+	// Тест с несуществующей папкой
+	oldPath := s.service.storagePath
+	s.service.storagePath = "./invalidnamefolder"
+	res, err := s.service.GetImagesList(ctx, &emptypb.Empty{})
+	s.Require().Error(err)
+	s.Require().Nil(res)
+	s.service.storagePath = oldPath
+
+	err = os.Mkdir(testPath, 0750)
+	s.Require().NoError(err)
+
+	// Тест с пустой папкой
+	s.service.storagePath = testPath
+	res, err = s.service.GetImagesList(ctx, &emptypb.Empty{})
+	s.Require().NoError(err)
+	s.Require().Equal([]*strg.Images{}, res.Images)
+
+	s.repo.EXPECT().SetBirthTimeFile(fileName, gomock.Any()).Return(nil)
+	_, err = s.service.SendImage(ctx, r)
+	s.Require().NoError(err)
+
+	s.repo.EXPECT().GetBirthTimeFile(fileName)
+	res, err = s.service.GetImagesList(ctx, &emptypb.Empty{})
+	s.Require().NoError(err)
+	s.Require().Equal(fileName, res.Images[0].Name)
+
+	err = os.RemoveAll(s.service.storagePath)
+	s.Require().NoError(err)
 }
